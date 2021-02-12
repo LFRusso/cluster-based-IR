@@ -1,2 +1,2 @@
 # cluster-based-IR
-Implementation of the algorithm described in the paper 'Fast and effective cluster-based information retrieval using frequent closed itemsets'
+Implementation of the algorithm described in the paper 'Fast and effective cluster-based information retrieval using frequent closed itemsets' (https://www.sciencedirect.com/science/article/abs/pii/S002002551830269X) Youcef Djenouria, Asma Belhadib, Philippe Fournier-Vigerc and Jerry Chun-Wei Lind.
