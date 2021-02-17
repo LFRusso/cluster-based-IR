@@ -26,16 +26,22 @@ class Retriever:
     '''
         Runs preprocessing step
     '''
-    def build(self, k, min_sup = 0.5, stopwords_lang = "portuguese", domain_stopwords = None):
+    def build(self, k, min_sup = 0.5, stopwords_lang = "portuguese", domain_stopwords = None, verbose=False):
         self.k = k
 
         # Generating clean documents (no stopwords)
+        if (verbose):
+            print("> Building Vector Space Model...")
         self.vsm = self._vsm_build(stopwords_lang, domain_stopwords)
         
         # Applying K-Means to the VSM
+        if (verbose):
+            print("> Running K-Means...")
         self.doc_labels = self._cluster_build(k)         
         
         # Building clusters with documents
+        if (verbose):
+            print("> Separatign clusters...")
         for i in range(k):
             new_cluster = Cluster(label=i)
             self.clusters.append(new_cluster)
@@ -44,15 +50,21 @@ class Retriever:
 
         # Cleaning and tokenizing words in clusters and building itemsets
         # with DCI-Closed
+        if (verbose):
+            print("> Running DCI-Closed...")
         for i in range(k):
             self.clusters[i].DCIClosed(self.stopwords, min_sup, lang = stopwords_lang)
+            if (verbose):
+                print(f"\t>> Finished cluster {i} itemsets")
         return
     
     '''
         Looks for documents that match a given query
          (Information Retrieval step)
+        cluster_select: highest | ranking | homogeneity | hr
+        document_select: full | partial 
     '''
-    def search(self, query):
+    def search(self, query, cluster_select="highest", doc_select="full", k=1, mu=None):
         # Generating word frequency dictionary
         word_dict = self._tokenize_query(query)
 
@@ -66,9 +78,32 @@ class Retriever:
 
         # Ranking clusters based on scores 
         scores = list(matching.values())
-        ranked_cluster = [x for _, x in sorted(zip(scores,self.clusters), key=lambda pair: pair[0])]
-        ranked_cluster.reverse()
-        return ranked_cluster
+        ranked_clusters = [x for _, x in sorted(zip(scores,self.clusters), key=lambda pair: pair[0])]
+        ranked_clusters.reverse()
+        
+        # Selecting clusters based on cluster_select method
+        selected_clusters = list()
+        if (cluster_select == "highest"):
+            selected_clusters.append(ranked_clusters[0])
+        elif (cluster_select == "ranking"):
+            selected_clusters = ranked_clusters[:k]
+        elif (cluster_select == "homogeneity"):
+            for i,score in enumerate(sorted(scores)):
+                if (socore > mu):
+                    selected_clusters.append(ranked_clusters[i])
+        elif (cluster_select == "ht"):
+            for i,score in enumerate(sorted(scores)[:k]):
+                if (socore > mu):
+                    selected_clusters.append(ranked_clusters[i])
+        
+        
+        # Selecting documents inside selected clusters based on doc_select method
+        selected_docs = list()
+        if (doc_select == "full"):
+            for c in selected_clusters:
+                selected_docs += c.elements
+
+        return selected_docs
 
     def _tokenize_query(self, query):
         terms = word_tokenize(query.lower())
@@ -95,8 +130,8 @@ class Retriever:
          # Adding domain specific stopwords
         if (domain_stopwords != None):
             self.stopwords.extend(domain_stopwords)
-        self.stopwords.extend([",", ".", "(", ")"])
-
+        self.stopwords.extend(list(punctuation))
+    
         # Generating Vecotor Space Model
         vectorizer = TfidfVectorizer(stop_words=self.stopwords)
         vsm = vectorizer.fit_transform(self.docs)
@@ -128,7 +163,7 @@ class Cluster:
 
     def DCIClosed(self, stopwords, min_sup = 0.5, lang = "portuguese"):
         self._bagOfWords_build(stopwords, lang)
-        
+
         closed_set, pre_set, post_set = extract_itemsets(self.words, min_sup)
         self.itemsets = dci_closed(closed_set, pre_set, post_set, self.words, min_sup)        
         return
