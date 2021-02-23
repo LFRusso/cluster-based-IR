@@ -6,7 +6,7 @@ NUM_CLUSTER = 10
 
 # Selecting list of documents to be read
 #input_file = "./data/template.csv"      # must be replaced with a file containing the corpus
-input_file = "./data/proposicao-tema-completo.csv"      # must be replaced with a file containing the corpus
+input_file = "./data/proposicao-tema-completo-sem-duplicado-2019.csv"      # must be replaced with a file containing the corpus
 df = pd.read_csv(input_file, delimiter=',', encoding="utf-8")
 #data = df.corpus        # replace with the desired column name
 data = df.txtEmenta.dropna()        # replace with the desired column name

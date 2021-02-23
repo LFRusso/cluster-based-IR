@@ -89,12 +89,13 @@ class Retriever:
             selected_clusters = ranked_clusters[:k]
         elif (cluster_select == "homogeneity"):
             for i,score in enumerate(sorted(scores)):
-                if (socore > mu):
+                if (score >= mu):
                     selected_clusters.append(ranked_clusters[i])
         elif (cluster_select == "ht"):
             for i,score in enumerate(sorted(scores)[:k]):
-                if (socore > mu):
+                if (score >= mu):
                     selected_clusters.append(ranked_clusters[i])
+        print(f"Selected {len(selected_clusters)} Clusters")
         
         
         # Selecting documents inside selected clusters based on doc_select method
